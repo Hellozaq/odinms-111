@@ -28,6 +28,7 @@ import client.inventory.Equip.ScrollResult;
 import client.inventory.Item;
 import client.inventory.MapleAndroid;
 import client.inventory.MapleInventoryType;
+import client.inventory.MaplePet;
 import client.inventory.MapleRing;
 import constants.GameConstants;
 import constants.QuickMoveEntry;
@@ -36,14 +37,12 @@ import handling.RecvPacketOpcode;
 import handling.SendPacketOpcode;
 import handling.world.World;
 import handling.world.guild.MapleGuild;
-
 import java.awt.Point;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-
 import server.MapleDueyActions;
 import server.MapleShop;
 import server.MapleTrade;
@@ -2325,6 +2324,12 @@ public class EtcPacket {
         mplew.write(chr.getStance());
         mplew.writeShort(0); //FH
         mplew.write(0); // pets after this
+        List<MaplePet> pets = chr.getPets();
+        for (MaplePet pet : pets) {
+            if (pet != null && pet.getSummoned()) {
+                PetPacket.addPetInfo(mplew, pet, false);
+            }
+        }
         mplew.write(0);
 
         mplew.write(1);

@@ -11,7 +11,6 @@ import client.inventory.MapleMount;
 import client.inventory.MaplePet;
 import client.inventory.ItemFlag;
 import client.inventory.MapleRing;
-
 import java.awt.Point;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -34,7 +33,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.io.Serializable;
-
 import handling.login.LoginInformationProvider.JobType;
 import client.anticheat.CheatTracker;
 import client.anticheat.ReportType;
@@ -52,7 +50,6 @@ import constants.ServerConstants.PlayerGMRank;
 import static constants.ServerConstants.travel_rate;
 import database.DatabaseConnection;
 import database.DatabaseException;
-
 import handling.channel.ChannelServer;
 import handling.channel.handler.PlayerHandler;
 import handling.login.LoginServer;
@@ -71,7 +68,6 @@ import handling.world.family.MapleFamilyBuff;
 import handling.world.family.MapleFamilyCharacter;
 import handling.world.guild.MapleGuild;
 import handling.world.guild.MapleGuildCharacter;
-
 import java.awt.Rectangle;
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -84,7 +80,6 @@ import java.util.Random;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import provider.MapleData;
 import provider.MapleDataProviderFactory;
 import tools.MockIOSession;
@@ -5012,6 +5007,11 @@ public class MapleCharacter extends AnimatedMapleMapObject implements Serializab
     public void sendSpawnData(MapleClient client) {
         if (client.getPlayer().allowedToTarget(this)) {
             client.sendPacket(EtcPacket.spawnPlayerMapobject(this));
+            for (final MaplePet pet : pets) {
+                if (pet.getSummoned() && this.id != client.getPlayer().getId()) {
+                    client.sendPacket(PetPacket.showPet(this, pet, false, false));
+                }
+            }
 
             for (final WeakReference<MapleCharacter> chr : clones) {
                 if (chr.get() != null) {

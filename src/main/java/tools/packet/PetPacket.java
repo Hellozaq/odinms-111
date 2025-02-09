@@ -21,18 +21,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package tools.packet;
 
 import client.inventory.Item;
-
 import java.util.List;
-
 import client.inventory.MaplePet;
 import client.MapleStat;
 import client.MapleCharacter;
-
 import constants.GameConstants;
 import handling.SendPacketOpcode;
-
 import java.awt.Point;
-
 import server.movement.LifeMovementFragment;
 import tools.data.MaplePacketLittleEndianWriter;
 
@@ -69,18 +64,24 @@ public class PetPacket {
             mplew.write(0);
             mplew.write(hunger ? 1 : 0);
         } else {
-            mplew.write(1);
-            mplew.write(0); //1?
-            mplew.writeInt(pet.getPetItemId());
-            mplew.writeMapleAsciiString(pet.getName());
-            mplew.writeLong(pet.getUniqueId());
-            mplew.writeShort(pet.getPos().x);
-            mplew.writeShort(pet.getPos().y - 20);
-            mplew.write(pet.getStance());
-            mplew.writeInt(pet.getFh());
+            addPetInfo(mplew, pet, true);
         }
 
         return mplew.getPacket();
+    }
+
+    public static void addPetInfo(final MaplePacketLittleEndianWriter mplew, MaplePet pet, boolean showpet) {
+        mplew.write(1);
+        if (showpet) {
+            mplew.write(0);
+        }
+        mplew.writeInt(pet.getPetItemId());
+        mplew.writeMapleAsciiString(pet.getName());
+        mplew.writeLong(pet.getUniqueId());
+        mplew.writeShort(pet.getPos().x);
+        mplew.writeShort(pet.getPos().y - 20);
+        mplew.write(pet.getStance());
+        mplew.writeInt(pet.getFh());
     }
 
     public static final byte[] removePet(final int cid, final int index) {
