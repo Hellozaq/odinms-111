@@ -832,7 +832,7 @@ public class MaplePacketCreator {
         public static byte[] cancelHoming() {
             MaplePacketLittleEndianWriter mplew = new MaplePacketLittleEndianWriter();
 
-            mplew.writeShort(SendPacketOpcode.CANCEL_BUFF.getValue());
+            mplew.writeShort(SendPacketOpcode.TEMP_STATS_RESET.getValue());
             PacketHelper.writeSingleMask(mplew, MapleBuffStat.HOMING_BEACON);
 
             return mplew.getPacket();
