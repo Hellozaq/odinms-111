@@ -20,8 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package handling;
 
-import constants.GameConstants;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -168,6 +166,7 @@ public enum RecvPacketOpcode implements WritableIntValueHolder {
     PET_LOOT,
     PET_AUTO_POT,
     PET_AUTO_BUFF,
+    PET_IGNORE,
     MOVE_SUMMON,
     SUMMON_ATTACK,
     DAMAGE_SUMMON,

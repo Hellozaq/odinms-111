@@ -20,19 +20,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package client.inventory;
 
+import client.MapleClient;
 import constants.GameConstants;
-
 import java.awt.Point;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.io.Serializable;
-
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import database.DatabaseConnection;
 import server.MapleItemInformationProvider;
 import server.movement.AbsoluteLifeMovement;
@@ -95,8 +93,8 @@ public class MaplePet implements Serializable {
     private Point pos;
     private byte fullness = 100, level = 1, summoned = 0;
     private short inventorypos = 0, closeness = 0, flags = 0;
-    private boolean changed = false;
     private int skillid;
+    private String exception;
 
     private MaplePet(final int petitemid, final int uniqueid) {
         this.petitemid = petitemid;
@@ -131,7 +129,7 @@ public class MaplePet implements Serializable {
             ret.setSecondsLeft(rs.getInt("seconds"));
             ret.setFlags(rs.getShort("flags"));
             ret.setBuffSkill(rs.getInt("skillid"));
-            ret.changed = false;
+            ret.setException(rs.getString("exception"));
 
             rs.close();
             ps.close();
@@ -144,11 +142,8 @@ public class MaplePet implements Serializable {
     }
 
     public final void saveToDb() {
-        if (!changed) {
-            return;
-        }
         try {
-            final PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("UPDATE pets SET name = ?, level = ?, closeness = ?, fullness = ?, seconds = ?, flags = ? , skillid = ? WHERE petid = ?");
+            final PreparedStatement ps = DatabaseConnection.getConnection().prepareStatement("UPDATE pets SET name = ?, level = ?, closeness = ?, fullness = ?, seconds = ?, flags = ? , skillid = ? , exception = ? WHERE petid = ?");
             ps.setString(1, name); // Set name
             ps.setByte(2, level); // Set Level
             ps.setShort(3, closeness); // Set Closeness
@@ -156,10 +151,10 @@ public class MaplePet implements Serializable {
             ps.setInt(5, secondsLeft);
             ps.setShort(6, flags);
             ps.setInt(7, skillid);
-            ps.setInt(8, uniqueid); // Set ID
+            ps.setString(8, exception);
+            ps.setInt(9, uniqueid); // Set ID
             ps.executeUpdate(); // Execute statement
             ps.close();
-            changed = false;
         } catch (final SQLException ex) {
             ex.printStackTrace();
         }
@@ -174,15 +169,15 @@ public class MaplePet implements Serializable {
     }
 
     public static final MaplePet createPet(final int itemid, final int uniqueid) {
-        return createPet(itemid, MapleItemInformationProvider.getInstance().getName(itemid), 1, 0, 100, uniqueid, itemid == 5000054 ? 18000 : 0, (short) (itemid == 5000067 && !GameConstants.GMS ? 0x37 : 0), 0);
+        return createPet(itemid, MapleItemInformationProvider.getInstance().getName(itemid), 1, 0, 100, uniqueid, itemid == 5000054 ? 18000 : 0, (short) (itemid == 5000067 && !GameConstants.GMS ? 0x37 : 0), 0, "NULL");
     }
 
-    public static final MaplePet createPet(int itemid, String name, int level, int closeness, int fullness, int uniqueid, int secondsLeft, short flag, int skillId) {
+    public static final MaplePet createPet(int itemid, String name, int level, int closeness, int fullness, int uniqueid, int secondsLeft, short flag, int skillId, String exception) {
         if (uniqueid <= -1) { //wah
             uniqueid = MapleInventoryIdentifier.getInstance();
         }
         try { // Commit to db first
-            PreparedStatement pse = DatabaseConnection.getConnection().prepareStatement("INSERT INTO pets (petid, name, level, closeness, fullness, seconds, flags, skillId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement pse = DatabaseConnection.getConnection().prepareStatement("INSERT INTO pets (petid, name, level, closeness, fullness, seconds, flags, skillId, exception) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             pse.setInt(1, uniqueid);
             pse.setString(2, name);
             pse.setByte(3, (byte) level);
@@ -191,6 +186,7 @@ public class MaplePet implements Serializable {
             pse.setInt(6, secondsLeft);
             pse.setShort(7, flag);
             pse.setInt(8, skillId);
+            pse.setString(9, exception);
             pse.executeUpdate();
             pse.close();
         } catch (final SQLException ex) {
@@ -205,6 +201,7 @@ public class MaplePet implements Serializable {
         pet.setFlags(flag);
         pet.setSecondsLeft(secondsLeft);
         pet.setBuffSkill(skillId);
+        pet.setException(exception);
 
         return pet;
     }
@@ -215,7 +212,6 @@ public class MaplePet implements Serializable {
 
     public final void setName(final String name) {
         this.name = name;
-        this.changed = true;
     }
 
     public final boolean getSummoned() {
@@ -248,7 +244,6 @@ public class MaplePet implements Serializable {
 
     public final void setCloseness(final int closeness) {
         this.closeness = (short) closeness;
-        this.changed = true;
     }
 
     public final byte getLevel() {
@@ -257,7 +252,6 @@ public class MaplePet implements Serializable {
 
     public final void setLevel(final int level) {
         this.level = (byte) level;
-        this.changed = true;
     }
 
     public final byte getFullness() {
@@ -266,7 +260,6 @@ public class MaplePet implements Serializable {
 
     public final void setFullness(final int fullness) {
         this.fullness = (byte) fullness;
-        this.changed = true;
     }
 
     public final short getFlags() {
@@ -275,7 +268,6 @@ public class MaplePet implements Serializable {
 
     public final void setFlags(final int fffh) {
         this.flags = (short) fffh;
-        this.changed = true;
     }
 
     public final int getFh() {
@@ -333,6 +325,13 @@ public class MaplePet implements Serializable {
 
     public final void setSecondsLeft(int sl) {
         this.secondsLeft = sl;
-        this.changed = true;
+    }
+
+    public String getException(MapleClient c) {
+        return exception;
+    }
+
+    public void setException(String exception) {
+        this.exception = exception;
     }
 }

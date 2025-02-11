@@ -22,7 +22,6 @@ package scripting;
 
 import java.awt.Point;
 import java.util.List;
-
 import client.inventory.Equip;
 import client.SkillFactory;
 import constants.GameConstants;
@@ -36,7 +35,6 @@ import client.MapleTrait.MapleTraitType;
 import client.inventory.*;
 import static constants.ServerConstants.travel_rate;
 import handling.channel.ChannelServer;
-import handling.channel.handler.InterServerHandler;
 import handling.world.MapleParty;
 import handling.world.MaplePartyCharacter;
 import handling.world.guild.MapleGuild;
@@ -54,14 +52,11 @@ import server.quest.MapleQuest;
 import tools.packet.EtcPacket;
 import tools.packet.PetPacket;
 import handling.world.World;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.WeakHashMap;
-
-import server.Timer.CloneTimer;
 import server.events.MapleEvent;
 import server.events.MapleEventType;
 import server.life.MapleNPC;
@@ -1151,7 +1146,7 @@ public abstract class AbstractPlayerInteraction {
             fullness = 100;
         }
         try {
-            MapleInventoryManipulator.addById(c, id, (short) 1, "", MaplePet.createPet(id, name, level, closeness, fullness, MapleInventoryIdentifier.getInstance(), id == 5000054 ? (int) period : 0, flags, 0), 45, "Pet from interaction " + id + " (" + id2 + ")" + " on " + FileoutputUtil.CurrentReadable_Date());
+            MapleInventoryManipulator.addById(c, id, (short) 1, "", MaplePet.createPet(id, name, level, closeness, fullness, MapleInventoryIdentifier.getInstance(), id == 5000054 ? (int) period : 0, flags, 0, "NULL"), 45, "Pet from interaction " + id + " (" + id2 + ")" + " on " + FileoutputUtil.CurrentReadable_Date());
         } catch (NullPointerException ex) {
             ex.printStackTrace();
         }

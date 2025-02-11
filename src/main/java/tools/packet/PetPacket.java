@@ -27,7 +27,6 @@ import client.MapleStat;
 import client.MapleCharacter;
 import constants.GameConstants;
 import handling.SendPacketOpcode;
-import java.awt.Point;
 import server.movement.LifeMovementFragment;
 import tools.data.MaplePacketLittleEndianWriter;
 
@@ -147,17 +146,49 @@ public class PetPacket {
         return mplew.getPacket();
     }
 
-    public static final byte[] showPetUpdate(final MapleCharacter chr, final int uniqueId, final byte index) {
+    public static final byte[] showPetUpdate(MapleCharacter chr, MaplePet pet) {
         final MaplePacketLittleEndianWriter mplew = new MaplePacketLittleEndianWriter();
 
-        mplew.writeShort(SendPacketOpcode.PET_EXCEPTION_LIST.getValue());
+        mplew.writeShort(SendPacketOpcode.PET_UPDATE.getValue());
         mplew.writeInt(chr.getId());
-        mplew.write(index);
-        mplew.writeLong(uniqueId);
-        mplew.write(0); // for each: int here
+        mplew.writeInt(chr.getPetIndex(pet));
+        mplew.writeLong(pet.getUniqueId());
+        String exception = pet.getException(chr.getClient());
+        if (exception != null) {
+            mplew.writeShort(exception.length());
+            mplew.writeMapleAsciiString(exception);
+        } else {
+            mplew.writeShort(0);
+        }
 
         return mplew.getPacket();
     }
+
+    public static final byte[] loadExceptionList(final int cid, final int petId, final String data) {
+        final tools.data.output.MaplePacketLittleEndianWriter mplew = new tools.data.output.MaplePacketLittleEndianWriter();
+
+        mplew.writeShort(SendPacketOpcode.PET_EXCEPTION_LIST.getValue());
+        mplew.writeInt(cid);
+        mplew.write(0); // lets make it 0, 0 = only boss pet
+        mplew.writeLong(petId);
+        final String[] ii = data.split(",");
+        if (data.isEmpty()) {
+            mplew.write(0);
+            return mplew.getPacket();
+        }
+        mplew.write(ii.length > 10 ? 10 : ii.length);
+        int i = 0;
+        for (final String ids : ii) {
+            i++;
+            if (i > 10) {
+                break;
+            }
+            mplew.writeInt(Integer.parseInt(ids));
+        }
+
+        return mplew.getPacket();
+    }
+
 
     public static final byte[] petStatUpdate(final MapleCharacter chr) {
         final MaplePacketLittleEndianWriter mplew = new MaplePacketLittleEndianWriter();

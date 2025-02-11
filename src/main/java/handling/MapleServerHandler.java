@@ -21,16 +21,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package handling;
 
 import constants.ServerConstants;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
-
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-
 import client.MapleClient;
 import client.inventory.MaplePet;
 import client.inventory.PetDataFactory;
@@ -43,7 +40,6 @@ import handling.login.LoginServer;
 import handling.login.handler.*;
 import handling.netty.MaplePacketDecoder;
 import handling.netty.MapleSession;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.lang.management.ManagementFactory;
@@ -52,15 +48,12 @@ import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
-
 import server.Randomizer;
 import tools.MapleAESOFB;
 import tools.packet.LoginPacket;
 import tools.data.ByteArrayByteStream;
 import tools.data.LittleEndianAccessor;
 import tools.Pair;
-
-
 import scripting.NPCScriptManager;
 import server.MTSStorage;
 import tools.FileoutputUtil;
@@ -628,7 +621,7 @@ public class MapleServerHandler extends ChannelInboundHandlerAdapter implements 
                 break;
             case CHAR_INFO_REQUEST:
                 c.getPlayer().updateTick(slea.readInt());
-                PlayerHandler.CharInfoRequest(slea.readInt(), c, c.getPlayer());
+                PlayerHandler.CharInfoRequest(slea, c);
                 break;
             case CLOSE_RANGE_ATTACK:
                 PlayerHandler.closeRangeAttack(slea, c, c.getPlayer(), false);
@@ -751,7 +744,10 @@ public class MapleServerHandler extends ChannelInboundHandlerAdapter implements 
                 PlayerHandler.ChangeKeymap(slea, c.getPlayer());
                 break;
             case UPDATE_ENV:
-                // We handle this in MapleMap
+                PlayerHandler.UpdateCharacter(slea, c);
+                break;
+            case PET_IGNORE:
+                PlayerHandler.PetIgnore(slea, c.getPlayer(), c);
                 break;
             case CHANGE_MAP:
                 if (cs) {

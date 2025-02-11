@@ -82,7 +82,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import provider.MapleData;
 import provider.MapleDataProviderFactory;
-import tools.MockIOSession;
 import scripting.EventInstanceManager;
 import scripting.NPCScriptManager;
 import server.*;
@@ -111,7 +110,6 @@ import server.Timer.MapTimer;
 import server.life.MapleMonsterStats;
 import server.life.MobSkill;
 import server.life.MobSkillFactory;
-import server.life.PlayerNPC;
 import server.maps.Event_PyramidSubway;
 import server.maps.MapleDragon;
 import server.maps.MapleExtractor;
@@ -119,14 +117,11 @@ import server.maps.MapleFoothold;
 import server.maps.MechDoor;
 import server.maps.SummonMovementType;
 import server.movement.LifeMovementFragment;
-import tools.ArrayMap;
 import tools.ConcurrentEnumMap;
 import tools.FileoutputUtil;
 import tools.StringUtil;
 import tools.Triple;
 import tools.packet.EtcPacket.EffectPacket;
-import tools.packet.EtcPacket.NPCPacket;
-import tools.packet.EtcPacket;
 import tools.packet.EtcPacket.SummonPacket;
 import tools.packet.MaplePacketCreator;
 import tools.packet.MaplePacketCreator.BuddylistPacket;
@@ -6592,6 +6587,20 @@ public class MapleCharacter extends AnimatedMapleMapObject implements Serializab
         this.coconutteam = v;
     }
 
+    public final MaplePet getPetByUID(final int uid) {
+        if (pets == null) {
+            return null;
+        }
+        for (final MaplePet pet : pets) {
+            if (pet.getSummoned()) {
+                if (pet.getUniqueId() == uid) {
+                    return pet;
+                }
+            }
+        }
+        return null;
+    }
+
     public void spawnPet(byte slot) {
         spawnPet(slot, false, true);
     }
@@ -6655,7 +6664,7 @@ public class MapleCharacter extends AnimatedMapleMapObject implements Serializab
                         pet.setSummoned(getPetIndex(pet) + 1); //then get the index
                         if (broadcast && getMap() != null) {
                             getMap().broadcastMessage(this, PetPacket.showPet(this, pet, false, false), true);
-                            client.sendPacket(PetPacket.showPetUpdate(this, pet.getUniqueId(), (byte) (pet.getSummonedValue() - 1)));
+                            client.sendPacket(PetPacket.showPetUpdate(this, pet));
                             if (GameConstants.GMS) {
                                 client.sendPacket(PetPacket.petStatUpdate(this));
                             }

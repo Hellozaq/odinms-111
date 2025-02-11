@@ -22,12 +22,11 @@ package handling.channel.handler;
 
 import java.awt.Point;
 import java.util.List;
-
 import client.inventory.Item;
 import client.Skill;
 import client.SkillFactory;
 import client.SkillMacro;
-import client.MapleStat;
+import client.inventory.MaplePet;
 import constants.GameConstants;
 import client.inventory.MapleInventoryType;
 import client.MapleBuffStat;
@@ -41,16 +40,11 @@ import constants.BattleConstants;
 import constants.BattleConstants.PokemonAbility;
 import constants.BattleConstants.PokemonMap;
 import handling.channel.ChannelServer;
-
 import java.lang.ref.WeakReference;
-
 import server.events.MapleEvent;
 import server.events.MapleEventType;
-
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.LinkedList;
-
 import server.MapleInventoryManipulator;
 import server.MapleItemInformationProvider;
 import server.MapleStatEffect;
@@ -69,14 +63,11 @@ import server.maps.FieldLimitType;
 import server.movement.LifeMovementFragment;
 import server.quest.MapleQuest;
 import tools.FileoutputUtil;
-import tools.packet.EtcPacket;
+import tools.packet.*;
 import tools.Pair;
-import tools.packet.MobPacket;
-import tools.packet.MTSCSPacket;
 import tools.data.LittleEndianAccessor;
 import tools.packet.EtcPacket.EffectPacket;
 import tools.packet.EtcPacket.UIPacket;
-import tools.packet.MaplePacketCreator;
 import tools.packet.MaplePacketCreator.InventoryPacket;
 
 public class PlayerHandler {
@@ -328,7 +319,9 @@ public class PlayerHandler {
         c.sendPacket(MTSCSPacket.OnMapTransferResult(chr, vip, addrem == 0));
     }
 
-    public static final void CharInfoRequest(final int objectid, final MapleClient c, final MapleCharacter chr) {
+    public static final void CharInfoRequest(final LittleEndianAccessor slea, final MapleClient c) {
+        MapleCharacter chr = c.getPlayer();
+        int objectid = slea.readInt();
         if (c.getPlayer() == null || c.getPlayer().getMap() == null) {
             return;
         }
@@ -337,7 +330,59 @@ public class PlayerHandler {
         if (player != null && !player.isClone()) {
             if (!player.isGM() || c.getPlayer().isGM()) {
                 c.sendPacket(MaplePacketCreator.charInfo(player, c.getPlayer().getId() == objectid));
+
+                MaplePet pet0 = player.getPet(0);
+                String str = chr.getPet(0).getException(c);
+                if (pet0 != null && str != null) {
+                    c.sendPacket(PetPacket.loadExceptionList(player.getId(), pet0.getUniqueId(), str));
+                }
             }
+        }
+    }
+
+    public static void PetIgnore(LittleEndianAccessor slea, MapleCharacter player, MapleClient c) {
+        MapleCharacter chr = c.getPlayer();
+        final int petId = (int) slea.readLong();
+        if (chr == null || chr.getMap() == null || chr.getPetIndex(petId) < 0) {
+            return;
+        }
+        final MaplePet pet = chr.getPetByUID(petId);
+        if (pet == null) {
+            return;
+        }
+        if (chr.getPetIndex(petId) != 0) {
+            c.getPlayer().dropMessage(1, "Only Boss Pets can use this.");
+            c.sendPacket(MaplePacketCreator.enableActions());
+            return;
+        }
+        // Store in quest data will do
+        final byte size = slea.readByte();
+        if (size <= 0) {
+            pet.setException("");
+            c.sendPacket(PetPacket.loadExceptionList(chr.getId(), chr.getPet(0).getUniqueId(), ""));
+        } else {
+            final StringBuilder st = new StringBuilder();
+            for (int i = 0; i < size; i++) {
+                if (i > 10) {
+                    break;
+                }
+                st.append(slea.readInt()).append(",");
+            }
+            st.deleteCharAt(st.length() - 1);
+            pet.setException(st.toString());
+            c.sendPacket(PetPacket.loadExceptionList(chr.getId(), chr.getPet(0).getUniqueId(), st.toString()));
+        }
+    }
+
+    public static void UpdateCharacter(LittleEndianAccessor slea, MapleClient c) {
+        MapleCharacter chr = c.getPlayer();
+        chr.updatePetAuto();
+        if (chr.getPet(0) != null) {
+            String str = chr.getPet(0).getException(c);
+            if (str == null) {
+                str = "";
+            }
+            c.sendPacket(PetPacket.loadExceptionList(chr.getId(), chr.getPet(0).getUniqueId(), str + ""));
         }
     }
 
