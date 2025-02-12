@@ -199,6 +199,40 @@ public class InventoryHandler {
         c.sendPacket(MaplePacketCreator.enableActions());
     }
 
+    public static void useRemoteHiredMerchant(LittleEndianAccessor slea, MapleClient c) {
+        short slot = slea.readShort();
+        Item item = (Item) c.getPlayer().getInventory(MapleInventoryType.CASH).getItem(slot);
+        if (item == null) {
+            c.getSession().close(); //hack
+            return;
+        }
+        if (item.getItemId() != 5470000 || item.getQuantity() <= 0) {
+            c.getSession().close(); //hack
+            return;
+        }
+        HiredMerchant merchant = c.getChannelServer().findAndGetMerchant(c.getPlayer().getAccountID(), c.getPlayer().getId());
+        if (merchant == null) {
+            c.getPlayer().dropMessage(1, "频道不同或商店关闭的话无法使用快捷键功能");
+            return;
+        }
+        if (FieldLimitType.ChannelSwitch.check(c.getPlayer().getMap().getFieldLimit())) {
+            c.getPlayer().dropMessage(1, "在这里无法使用该道具。");
+            return;
+        }
+        MapleCharacter chr = c.getPlayer();
+        if (merchant.isOwner(chr) && merchant.isOpen() && merchant.isAvailable()) {
+            merchant.setOpen(false);
+            merchant.removeAllVisitors((byte) 17, (byte) 1);
+            c.sendPacket(PlayerShopPacket.getHiredMerch(chr, merchant, false));
+            chr.setPlayerShop(merchant);
+        } else if (!merchant.isOpen() || !merchant.isAvailable()) {
+            merchant.broadcastToVisitors(MaplePacketCreator.serverNotice(1, "商店主人正在整理物品。\r\n请稍后再度光临！"));
+        } else {
+            merchant.addVisitor(chr);
+            c.sendPacket(PlayerShopPacket.getHiredMerch(chr, merchant, false));
+        }
+    }
+
     public static final void ItemGather(final LittleEndianAccessor slea, final MapleClient c) {
         // [41 00] [E5 1D 55 00] [01]
         // [32 00] [01] [01] // Sent after

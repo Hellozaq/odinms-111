@@ -926,6 +926,9 @@ public class MapleServerHandler extends ChannelInboundHandlerAdapter implements 
             case NPC_TALK:
                 NPCHandler.NPCTalk(slea, c, c.getPlayer());
                 break;
+            case HIRED_REMOTE:
+                InventoryHandler.useRemoteHiredMerchant(slea, c);
+                break;
             case NPC_TALK_MORE:
                 NPCHandler.NPCMoreTalk(slea, c);
                 break;

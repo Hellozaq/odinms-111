@@ -645,4 +645,20 @@ public class ChannelServer {
             merchLock.readLock().unlock();
         }
     }
+
+    public final HiredMerchant findAndGetMerchant(final int accid, int cid) {
+        merchLock.readLock().lock();
+        try {
+            final Iterator itr = merchants.values().iterator();
+            while (itr.hasNext()) {
+                HiredMerchant hm = (HiredMerchant) itr.next();
+                if (hm.getOwnerAccId() == accid || hm.getOwnerId() == cid) {
+                    return hm;
+                }
+            }
+        } finally {
+            merchLock.readLock().unlock();
+        }
+        return null;
+    }
 }
