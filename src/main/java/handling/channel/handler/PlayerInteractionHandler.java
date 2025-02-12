@@ -41,6 +41,7 @@ import server.shops.MaplePlayerShopItem;
 import server.maps.MapleMapObject;
 import server.maps.MapleMapObjectType;
 import server.shops.MapleMiniGame;
+import tools.Pair;
 import tools.packet.EtcPacket;
 import tools.packet.PlayerShopPacket;
 import tools.data.LittleEndianAccessor;
@@ -230,7 +231,7 @@ public class PlayerInteractionHandler {
                              c.sendPacket(PlayerShopPacket.getHiredMerch(chr, merchant, false));
                              } else {*/
                             if (!merchant.isOpen() || !merchant.isAvailable()) {
-                                chr.dropMessage(1, "商店在整理中，請稍後光臨。");
+                                chr.dropMessage(1, "商店主人正在整理物品。\r\n请稍后再度光临！");
                             } else {
                                 if (ips.getFreeSlot() == -1) {
                                     chr.dropMessage(1, "商店目前繁忙，請稍後光臨。");
@@ -319,7 +320,11 @@ public class PlayerInteractionHandler {
                     chr.getTrade().chat(message);
                 } else if (chr.getPlayerShop() != null) {
                     final IMaplePlayerShop ips = chr.getPlayerShop();
+                    ips.getMessages().add(new Pair<>(chr.getName() + " : " + message, ips.getVisitorSlot(chr)));
                     ips.broadcastToVisitors(PlayerShopPacket.shopChat(chr.getName() + " : " + (message), ips.getVisitorSlot(chr)));
+                    if (ips.isOwner(chr) && ips.getShopType() == 1) {
+                        c.sendPacket(PlayerShopPacket.shopChat(chr.getName() + " : " + message, ips.getVisitorSlot(chr)));
+                    }
                     if (chr.getClient().isMonitored()) { //Broadcast info even if it was a command.
                         World.Broadcast.broadcastGMMessage(MaplePacketCreator.serverNotice(6, chr.getName() + " said in " + ips.getOwnerName() + " shop : " + message));
                     }

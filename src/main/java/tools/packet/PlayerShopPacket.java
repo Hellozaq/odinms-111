@@ -23,12 +23,9 @@ package tools.packet;
 import client.MapleCharacter;
 import client.inventory.Item;
 import client.MapleClient;
-
 import constants.GameConstants;
 import handling.SendPacketOpcode;
-
 import java.util.List;
-
 import server.MerchItemPackage;
 import server.shops.AbstractPlayerStore.BoughtItem;
 import server.shops.HiredMerchant;
@@ -212,7 +209,7 @@ public class PlayerShopPacket {
 
         mplew.writeShort(SendPacketOpcode.PLAYER_INTERACTION.getValue());
         mplew.write(GameConstants.GMS ? 14 : 6);
-        mplew.write(GameConstants.GMS ? 15 : 8);
+        mplew.write(GameConstants.GMS ? 15 : 9);
         mplew.write(slot);
         mplew.writeMapleAsciiString(message);
 

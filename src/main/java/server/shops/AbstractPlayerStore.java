@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package server.shops;
 
 import constants.GameConstants;
-
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
@@ -30,20 +29,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.lang.ref.WeakReference;
-
 import client.inventory.Item;
 import client.inventory.ItemLoader;
 import client.MapleCharacter;
 import client.MapleClient;
 import client.inventory.MapleInventoryType;
 import database.DatabaseConnection;
-
 import handling.channel.ChannelServer;
 import handling.world.World;
-
 import java.awt.Point;
 import java.util.ArrayList;
-
 import server.maps.MapleMapObject;
 import server.maps.MapleMap;
 import server.maps.MapleMapObjectType;
@@ -60,6 +55,7 @@ public abstract class AbstractPlayerStore extends MapleMapObject implements IMap
     protected List<String> visitors = new LinkedList<String>();
     protected List<BoughtItem> bought = new LinkedList<BoughtItem>();
     protected List<MaplePlayerShopItem> items = new LinkedList<MaplePlayerShopItem>();
+    protected List<Pair<String, Byte>> messages = new LinkedList<>();
 
     public AbstractPlayerStore(MapleCharacter owner, int itemId, String desc, String pass, int slots, Point pos) {
         this.setPosition(pos);
@@ -421,6 +417,11 @@ public abstract class AbstractPlayerStore extends MapleMapObject implements IMap
     @Override
     public List<BoughtItem> getBoughtItems() {
         return bought;
+    }
+
+    @Override
+    public final List<Pair<String, Byte>> getMessages() {
+        return messages;
     }
 
     public static final class BoughtItem {

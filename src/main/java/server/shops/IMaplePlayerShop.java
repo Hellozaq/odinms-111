@@ -21,10 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package server.shops;
 
 import java.util.List;
-
 import client.MapleCharacter;
 import client.MapleClient;
-
 import server.shops.AbstractPlayerStore.BoughtItem;
 import tools.Pair;
 
@@ -100,4 +98,6 @@ public interface IMaplePlayerShop {
     public boolean isAvailable();
 
     public List<BoughtItem> getBoughtItems();
+
+    public List<Pair<String, Byte>> getMessages();
 }

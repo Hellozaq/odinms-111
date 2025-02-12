@@ -26,7 +26,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import client.inventory.Item;
 import client.inventory.MapleInventoryType;
 import client.MapleClient;
@@ -35,9 +34,7 @@ import constants.GameConstants;
 import client.inventory.ItemLoader;
 import database.DatabaseConnection;
 import handling.world.World;
-
 import java.util.Map;
-
 import server.MapleInventoryManipulator;
 import server.MapleItemInformationProvider;
 import server.MerchItemPackage;
