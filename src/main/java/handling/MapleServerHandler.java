@@ -342,13 +342,6 @@ public class MapleServerHandler extends ChannelInboundHandlerAdapter implements 
         ctx.writeAndFlush(LoginPacket.getHello(ServerConstants.MAPLE_VERSION, ivSend, ivRecv));
         ctx.channel().attr(MapleClient.CLIENT_KEY).set(client);
 
-        //session.setIdleTime(IdleStatus.READER_IDLE, 60);
-        //session.setIdleTime(IdleStatus.WRITER_IDLE, 60);
-
-        if (!ServerConstants.Use_Fixed_IV) {
-            RecvPacketOpcode.reloadValues();
-            SendPacketOpcode.reloadValues();
-        }
         StringBuilder sb = new StringBuilder();
         if (channel > -1) {
             sb.append("[Channel Server] Channel ").append(channel).append(" : ");
