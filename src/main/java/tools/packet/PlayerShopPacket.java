@@ -586,4 +586,12 @@ public class PlayerShopPacket {
         }
         return mplew.getPacket();
     }
+    
+    public static byte [] hiredMerchantOwnerLeave() {
+        tools.data.output.MaplePacketLittleEndianWriter mplew = new tools.data.output.MaplePacketLittleEndianWriter(4);
+        mplew.writeShort(SendPacketOpcode.PLAYER_INTERACTION.getValue());
+        mplew.write(34);
+        mplew.write(0);
+        return mplew.getPacket();
+    }
 }

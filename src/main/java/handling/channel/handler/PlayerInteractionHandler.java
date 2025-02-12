@@ -566,13 +566,11 @@ public class PlayerInteractionHandler {
             }
             case CLOSE_MERCHANT: {
                 final IMaplePlayerShop merchant = chr.getPlayerShop();
-                if (merchant != null && merchant.getShopType() == 1 && merchant.isOwner(chr) && merchant.isAvailable()) {
-                    c.sendPacket(PlayerShopPacket.shopErrorMessage(0x14, 0));// 關閉窗口
-                    c.sendPacket(MaplePacketCreator.serverNotice(1, "請去找富蘭德里領取你的裝備和楓幣。"));
+                if (merchant != null && merchant.getShopType() == 1 && merchant.isOwner(chr)) {
+                    c.sendPacket(PlayerShopPacket.hiredMerchantOwnerLeave());
                     c.sendPacket(MaplePacketCreator.enableActions());
-                    merchant.removeAllVisitors(-1, -1);
-                    chr.setPlayerShop(null);
                     merchant.closeShop(true, true);
+                    chr.setPlayerShop(null);
                 }
                 break;
             }
