@@ -122,7 +122,7 @@ public class PlayerShopPacket {
         mplew.write(7); // ?
         mplew.writeShort(merch.getVisitorSlot(chr));
         mplew.writeInt(merch.getItemId());
-        mplew.writeMapleAsciiString("Hired Merchant");
+        mplew.writeMapleAsciiString("雇用商人");
         for (final Pair<Byte, MapleCharacter> storechr : merch.getVisitors()) {
             mplew.write(storechr.left);
             PacketHelper.addCharLook(mplew, storechr.right, false);
@@ -130,7 +130,11 @@ public class PlayerShopPacket {
             mplew.writeShort(storechr.right.getJob());
         }
         mplew.write(-1);
-        mplew.writeShort(0);
+        mplew.writeShort(merch.getMessages().size());
+        for (int i = 0; i < merch.getMessages().size(); i++) {
+            mplew.writeMapleAsciiString(merch.getMessages().get(i).getLeft());
+            mplew.write(merch.getMessages().get(i).getRight());
+        }
         mplew.writeMapleAsciiString(merch.getOwnerName());
         if (merch.isOwner(chr)) {
             mplew.writeInt(merch.getTimeLeft());
