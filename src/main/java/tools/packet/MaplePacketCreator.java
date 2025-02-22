@@ -2096,10 +2096,10 @@ public class MaplePacketCreator {
             mplew.write(buddylist.size());
             for (BuddylistEntry buddy : buddylist) {
                 mplew.writeInt(buddy.getCharacterId());
-                mplew.writeAsciiString(buddy.getName(), 13);
+                mplew.writeAsciiString(StringUtil.getRightPaddedStr(buddy.getName(), '\0', 13));
                 mplew.write(buddy.isVisible() ? 0 : 1);
                 mplew.writeInt(buddy.getChannel() == -1 ? -1 : (buddy.getChannel() - 1));
-                mplew.writeAsciiString(buddy.getGroup(), 17);
+                mplew.writeAsciiString(StringUtil.getRightPaddedStr(buddy.getGroup(), '\0', 17));
             }
             for (int x = 0; x < buddylist.size(); x++) {
                 mplew.writeInt(0);
@@ -2130,11 +2130,11 @@ public class MaplePacketCreator {
             mplew.writeInt(levelFrom);
             mplew.writeInt(jobFrom);
             mplew.writeInt(cidFrom);
-            mplew.writeAsciiString(nameFrom, 13);
+            mplew.writeAsciiString(StringUtil.getRightPaddedStr(nameFrom, '\0', 13));
             mplew.write(1);
             mplew.writeInt(0);
-            mplew.writeAsciiString("ETC", 17);
-            mplew.write(0);
+            mplew.writeAsciiString(StringUtil.getRightPaddedStr("群未定", '\0', 17));
+            mplew.write(1);
 
             return mplew.getPacket();
         }

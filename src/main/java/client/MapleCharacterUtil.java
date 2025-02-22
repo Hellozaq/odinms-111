@@ -36,8 +36,8 @@ import database.DatabaseConnection;
 
 public class MapleCharacterUtil {
 
-    private static final Pattern namePattern = Pattern.compile("^(?!_)(?!.*?_$)[a-zA-Z0-9_\\u4e00-\\u9fa5]+$");
-    private static final Pattern petPattern = Pattern.compile("^(?!_)(?!.*?_$)[a-zA-Z0-9_\\u4e00-\\u9fa5]+$");
+    private static final Pattern namePattern = Pattern.compile("[A-Za-z0-9_\\-\\u4e00-\\u9fa5\\-\\u2e80-\\u9fff\\ue810-\\ue814]{2,12}");
+    private static final Pattern petPattern = Pattern.compile("[A-Za-z0-9_\\-\\u4e00-\\u9fa5\\-\\u2e80-\\u9fff\\ue810-\\ue814]{2,12}");
 
     public static final boolean canCreateChar(final String name, final boolean gm) {
         if (getIdByName(name) != -1 || !isEligibleCharName(name, gm)) {

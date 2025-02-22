@@ -60,7 +60,7 @@ public class StringUtil {
      */
     public static final String getRightPaddedStr(final String in, final char padchar, final int length) {
         StringBuilder builder = new StringBuilder(in);
-        for (int x = in.length(); x < length; x++) {
+        for (int x = in.getBytes().length; x < length; x++) {
             builder.append(padchar);
         }
         return builder.toString();

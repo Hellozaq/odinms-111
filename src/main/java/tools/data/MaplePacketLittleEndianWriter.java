@@ -151,11 +151,11 @@ public class MaplePacketLittleEndianWriter {
     }
 
     public final void writeAsciiString(String s, final int max) {
-        if (s.getBytes().length > max) {
+        if (s.getBytes(ASCII).length > max) {
             s = s.substring(0, max);
         }
         write(s.getBytes(ASCII));
-        for (int i = s.getBytes().length; i < max; i++) {
+        for (int i = s.getBytes(ASCII).length; i < max; i++) {
             write(0);
         }
     }
@@ -166,7 +166,7 @@ public class MaplePacketLittleEndianWriter {
      * @param s The ASCII string to use maple-convention to write.
      */
     public final void writeMapleAsciiString(final String s) {
-        writeShort((short) s.getBytes().length);
+        writeShort((short) s.getBytes(ASCII).length);
         writeAsciiString(s);
     }
 

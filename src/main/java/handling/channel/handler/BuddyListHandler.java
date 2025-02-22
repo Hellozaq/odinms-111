@@ -222,9 +222,9 @@ public class BuddyListHandler {
             final BuddylistEntry ble = buddylist.get(otherCid);
             if (!buddylist.isFull() && ble != null && !ble.isVisible()) {
                 final int channel = World.Find.findChannel(otherCid);
-                buddylist.put(new BuddylistEntry(ble.getName(), otherCid, "ETC", channel, true));
+                buddylist.put(new BuddylistEntry(ble.getName(), otherCid, "群未定", channel, true));
                 c.sendPacket(BuddylistPacket.updateBuddylist(buddylist.getBuddies(), 10));
-                notifyRemoteChannel(c, channel, otherCid, "ETC", ADDED);
+                notifyRemoteChannel(c, channel, otherCid, "群未定", ADDED);
             } else {
                 c.sendPacket(BuddylistPacket.buddylistMessage((byte) 11));
             }
