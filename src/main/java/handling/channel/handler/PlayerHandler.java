@@ -422,17 +422,18 @@ public class PlayerHandler {
             attacker = chr.getMap().getMonsterByOid(oid);
             direction = slea.readByte(); // Knock direction
 
-            if (attacker == null || attacker.getId() != monsteridfrom || attacker.getLinkCID() > 0 || attacker.isFake() || attacker.getStats().isFriendly()) {
-                return;
-            }
-            if (attacker.getId() == 9400809 || attacker.getId() == 9300507) {
-                List<BanishInfo> infos = attacker.getStats().getBanishInfo();
-                BanishInfo info = infos.get(Randomizer.nextInt(infos.size()));
-                if (info != null) {
-                    chr.changeMapBanish(info.getMap(), info.getPortal(), info.getMsg());
-                }
-            }
-            if (type != -1 && damage > 0) { // Bump damage
+            // if (attacker == null || attacker.getId() != monsteridfrom || attacker.getLinkCID() > 0 || attacker.isFake() || attacker.getStats().isFriendly()) {
+            //     return;
+            // }
+            // if (attacker.getId() == 9400809 || attacker.getId() == 9300507) {
+            //     List<BanishInfo> infos = attacker.getStats().getBanishInfo();
+            //     BanishInfo info = infos.get(Randomizer.nextInt(infos.size()));
+            //     if (info != null) {
+            //         chr.changeMapBanish(info.getMap(), info.getPortal(), info.getMsg());
+            //     }
+            // }
+            // if (type != -1 && damage > 0) { // Bump damage
+            if (attacker != null) { // Bump damage
                 final MobAttackInfo attackInfo = attacker.getStats().getMobAttack(type);
                 if (attackInfo != null) {
                     if (attackInfo.isElement && stats.TER > 0 && Randomizer.nextInt(100) < stats.TER) {
