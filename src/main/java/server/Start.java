@@ -2,43 +2,29 @@ package server;
 
 import client.SkillFactory;
 import client.inventory.MapleInventoryIdentifier;
-import client.commands.SuperGMCommand;
-import constants.BattleConstants;
 import constants.QuickMove;
 import constants.ServerConstants;
 import static constants.ServerConstants.TIMEZONE;
 import database.DatabaseBackup;
+import database.DatabaseConnection;
 import handling.MapleServerHandler;
+import handling.cashshop.CashShopServer;
 import handling.channel.ChannelServer;
 import handling.channel.MapleGuildRanking;
-import handling.login.LoginServer;
-import handling.cashshop.CashShopServer;
 import handling.login.LoginInformationProvider;
+import handling.login.LoginServer;
 import handling.world.World;
-
-import java.sql.SQLException;
-
-import database.DatabaseConnection;
 import handling.world.family.MapleFamily;
 import handling.world.guild.MapleGuild;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Calendar;
-import java.util.TimeZone;
-
 import server.Timer.*;
 import server.events.MapleOxQuizFactory;
-import server.life.MapleLifeFactory;
-import server.life.MapleMonsterInformationProvider;
-import server.life.MobSkillFactory;
-import server.life.PlayerNPC;
+import server.life.*;
 import server.quest.MapleQuest;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
 import tools.HairAndEye;
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Start {
 
@@ -49,27 +35,84 @@ public class Start {
     public void run() throws InterruptedException {
         System.setProperty("net.sf.odinms.wzpath", "wz");
         System.setProperty("polyglot.js.nashorn-compat", "true");
-        System.out.println("正在删除和初始化未使用的數據");
+        System.out.println("初始化系统设定...");
         clean();
-        Connection con = null;
-        PreparedStatement ps = null;
-        ServerConstants.loadSetting();//載入外部設置
-        try {
-            con = DatabaseConnection.getConnection();
-            ps = con.prepareStatement("UPDATE accounts SET loggedin = 0");
-            ps.executeUpdate();
-        } catch (SQLException ex) {
-            throw new RuntimeException("[錯誤]註銷所有帳戶時出現問題。");
-        } finally {
-            if (ps != null) {
-                try {
-                    ps.close();
-                } catch (Exception e) {
-                }
-            }
-        }
+
+        ServerConstants.loadSetting();
+        resetLoginStatus();
+
         DatabaseBackup.getInstance().startTasking();
         World.init();
+
+        startTimers();
+
+        System.out.println("开始并行加载模块.");
+
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+        List<Runnable> tasks = Arrays.asList(
+            () -> logTime("MapleGuildRanking", MapleGuildRanking.getInstance()::load),
+            () -> logTime("MapleGuild", MapleGuild::loadAll),
+            () -> logTime("MapleFamily", MapleFamily::loadAll),
+            () -> logTime("MapleLifeFactory", MapleLifeFactory::loadQuestCounts),
+            () -> logTime("MapleQuest", MapleQuest::initQuests),
+            () -> logTime("HairAndEye", HairAndEye::Load),
+            () -> {
+                MapleItemInformationProvider iip = MapleItemInformationProvider.getInstance();
+                logTime("runEtc", iip::runEtc);
+                logTime("runItems", iip::runItems);
+            },
+            () -> logTime("MapleMonsterInformationProvider", MapleMonsterInformationProvider.getInstance()::load),
+            () -> logTime("SkillFactory", SkillFactory::load),
+            () -> logTime("LoginInformationProvider", LoginInformationProvider::getInstance),
+            () -> logTime("RandomRewards", RandomRewards::load),
+            () -> logTime("MapleOxQuizFactory", MapleOxQuizFactory::getInstance),
+            () -> logTime("MapleCarnivalFactory", MapleCarnivalFactory::getInstance),
+            () -> logTime("MobSkillFactory", MobSkillFactory::getInstance),
+            () -> logTime("SpeedRunner", SpeedRunner::loadSpeedRuns),
+            () -> logTime("MTSStorage", MTSStorage::load),
+            () -> logTime("MapleInventoryIdentifier", MapleInventoryIdentifier::getInstance),
+            () -> logTime("CashItemFactory", CashItemFactory.getInstance()::initialize),
+            () -> logTime("PlayerNPC", PlayerNPC::loadAll)
+        );
+
+        CountDownLatch latch = new CountDownLatch(tasks.size());
+        for (Runnable task : tasks) {
+            executor.submit(() -> {
+                try {
+                    task.run();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executor.shutdown();
+
+        System.out.println("加载网络服务和服务器核心...");
+        MapleServerHandler.initiate();
+        LoginServer.run_startup_configurations();
+        ChannelServer.startChannel_Main();
+        CashShopServer.run_startup_configurations();
+
+        System.out.println("注册任务/监控...");
+        CheatTimer.getInstance().register(AutobanManager.getInstance(), 60000);
+        Runtime.getRuntime().addShutdownHook(new Thread(new Shutdown()));
+        World.registerRespawn();
+        ShutdownServer.registerMBean();
+
+        MapleMonsterInformationProvider.getInstance().addExtra();
+        LoginServer.setOn();
+        QuickMove.QuickMoveLoad();
+        TimeZone.setDefault(TimeZone.getTimeZone(TIMEZONE));
+
+        System.out.println("枫之谷世界启动成功：< 花费时间 " + ((System.currentTimeMillis() - startTime) / 1000) + " 秒 >");
+        RankingWorker.run();
+    }
+
+    private void startTimers() {
         WorldTimer.getInstance().start();
         EtcTimer.getInstance().start();
         MapTimer.getInstance().start();
@@ -77,80 +120,54 @@ public class Start {
         EventTimer.getInstance().start();
         BuffTimer.getInstance().start();
         PingTimer.getInstance().start();
-        System.out.print("\r\n正在加載伺服器的數據.......");
-        MapleGuildRanking.getInstance().load();
-        MapleGuild.loadAll(); //(this); 
-        MapleFamily.loadAll(); //(this); 
-        MapleLifeFactory.loadQuestCounts();
-        MapleQuest.initQuests();
-        HairAndEye.Load();
-        System.out.print("\r\n正在加載[1]，請稍後.......");
-        MapleItemInformationProvider.getInstance().runEtc();
-        MapleMonsterInformationProvider.getInstance().load();
-        //BattleConstants.init(); 
-        MapleItemInformationProvider.getInstance().runItems();
-        SkillFactory.load();
-        LoginInformationProvider.getInstance();
-        RandomRewards.load();
-        System.out.print("\r\n正在加載[2]，請稍後.......");
-        MapleOxQuizFactory.getInstance();
-        MapleCarnivalFactory.getInstance();
-        MobSkillFactory.getInstance();
-        SpeedRunner.loadSpeedRuns();
-        MTSStorage.load();
-        System.out.print("\r\n正在加載[3]，請稍後.......");
-        MapleInventoryIdentifier.getInstance();
-        CashItemFactory.getInstance().initialize();
-        MapleServerHandler.initiate();
-        System.out.print("\r\n");
-        LoginServer.run_startup_configurations();
-        ChannelServer.startChannel_Main();
-        System.out.print("正在加載[4]，請稍後.......\r\n");
-        CashShopServer.run_startup_configurations();
-        CheatTimer.getInstance().register(AutobanManager.getInstance(), 60000);
-        Runtime.getRuntime().addShutdownHook(new Thread(new Shutdown()));
-        World.registerRespawn();
-        //ChannelServer.getInstance(1).getMapFactory().getMap(910000000).spawnRandDrop(); //start it off
-        ShutdownServer.registerMBean();
-        //ServerConstants.registerMBean();
-        PlayerNPC.loadAll();// touch - so we see database problems early...
-        MapleMonsterInformationProvider.getInstance().addExtra();
-        LoginServer.setOn(); //now or later
-        QuickMove.QuickMoveLoad();
-        TimeZone.setDefault(TimeZone.getTimeZone(TIMEZONE));
-        System.out.println("楓之谷世界啟動成功：< 花費時間 " + ((System.currentTimeMillis() - startTime) / 1000) + " 秒 >");
-        RankingWorker.run();
+    }
+
+    private void resetLoginStatus() {
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE accounts SET loggedin = 0")) {
+            ps.executeUpdate();
+            System.out.println("重置登录状态完成.");
+        } catch (SQLException ex) {
+            throw new RuntimeException("[错误] 注销所有账户时出现问题。", ex);
+        }
+    }
+
+    private void logTime(String name, Runnable task) {
+        long t = System.currentTimeMillis();
+        task.run();
+        //System.out.println("" + name + " 加载完成 (" + (System.currentTimeMillis() - t) + " ms)");
     }
 
     public static class Shutdown implements Runnable {
-
         @Override
         public void run() {
-            ShutdownServer.getInstance().run();
             ShutdownServer.getInstance().run();
         }
     }
 
     public void clean() {
-        try {
-            int nu = 0;
-            PreparedStatement ps;
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM acheck WHERE day = 1");
+             ResultSet rs = ps.executeQuery()) {
+
             Calendar ocal = Calendar.getInstance();
-            ps = DatabaseConnection.getConnection().prepareStatement("SELECT * FROM acheck WHERE day = 1");
-            ResultSet rs = ps.executeQuery();
+            String today = ocal.get(Calendar.YEAR) + "" + (ocal.get(Calendar.MONTH) + 1) + "" + ocal.get(Calendar.DAY_OF_MONTH);
+            int count = 0;
+
             while (rs.next()) {
                 String key = rs.getString("keya");
-                String day = ocal.get(ocal.YEAR) + "" + (ocal.get(ocal.MONTH) + 1) + "" + ocal.get(ocal.DAY_OF_MONTH);
-                String da[] = key.split("_");
-                if (!da[0].equals(day)) {
-                    ps = DatabaseConnection.getConnection().prepareStatement("DELETE FROM acheck WHERE keya = ?");
-                    ps.setString(1, key);
-                    ps.executeUpdate();
-                    nu++;
+                String[] da = key.split("_");
+                if (!da[0].equals(today)) {
+                    try (PreparedStatement del = con.prepareStatement("DELETE FROM acheck WHERE keya = ?")) {
+                        del.setString(1, key);
+                        del.executeUpdate();
+                        count++;
+                    }
                 }
             }
-            ps.close();
-        } catch (SQLException ex) {
+            System.out.println("清理过期 acheck 记录：" + count);
+        } catch (SQLException e) {
+            System.err.println("清理 acheck 资料时发生错误：" + e.getMessage());
         }
     }
 
