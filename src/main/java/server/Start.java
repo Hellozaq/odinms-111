@@ -50,29 +50,29 @@ public class Start {
 
         ExecutorService executor = Executors.newFixedThreadPool(10);
         List<Runnable> tasks = Arrays.asList(
-            () -> logTime("MapleGuildRanking", MapleGuildRanking.getInstance()::load),
-            () -> logTime("MapleGuild", MapleGuild::loadAll),
-            () -> logTime("MapleFamily", MapleFamily::loadAll),
-            () -> logTime("MapleLifeFactory", MapleLifeFactory::loadQuestCounts),
-            () -> logTime("MapleQuest", MapleQuest::initQuests),
-            () -> logTime("HairAndEye", HairAndEye::Load),
-            () -> {
-                MapleItemInformationProvider iip = MapleItemInformationProvider.getInstance();
-                logTime("runEtc", iip::runEtc);
-                logTime("runItems", iip::runItems);
-            },
-            () -> logTime("MapleMonsterInformationProvider", MapleMonsterInformationProvider.getInstance()::load),
-            () -> logTime("SkillFactory", SkillFactory::load),
-            () -> logTime("LoginInformationProvider", LoginInformationProvider::getInstance),
-            () -> logTime("RandomRewards", RandomRewards::load),
-            () -> logTime("MapleOxQuizFactory", MapleOxQuizFactory::getInstance),
-            () -> logTime("MapleCarnivalFactory", MapleCarnivalFactory::getInstance),
-            () -> logTime("MobSkillFactory", MobSkillFactory::getInstance),
-            () -> logTime("SpeedRunner", SpeedRunner::loadSpeedRuns),
-            () -> logTime("MTSStorage", MTSStorage::load),
-            () -> logTime("MapleInventoryIdentifier", MapleInventoryIdentifier::getInstance),
-            () -> logTime("CashItemFactory", CashItemFactory.getInstance()::initialize),
-            () -> logTime("PlayerNPC", PlayerNPC::loadAll)
+                () -> logTime("MapleGuildRanking", MapleGuildRanking.getInstance()::load),
+                () -> logTime("MapleGuild", MapleGuild::loadAll),
+                () -> logTime("MapleFamily", MapleFamily::loadAll),
+                () -> logTime("MapleLifeFactory", MapleLifeFactory::loadQuestCounts),
+                () -> logTime("MapleQuest", MapleQuest::initQuests),
+                () -> logTime("HairAndEye", HairAndEye::Load),
+                () -> {
+                    MapleItemInformationProvider iip = MapleItemInformationProvider.getInstance();
+                    logTime("runEtc", iip::runEtc);
+                    logTime("runItems", iip::runItems);
+                },
+                () -> logTime("MapleMonsterInformationProvider", MapleMonsterInformationProvider.getInstance()::load),
+                () -> logTime("SkillFactory", SkillFactory::load),
+                () -> logTime("LoginInformationProvider", LoginInformationProvider::getInstance),
+                () -> logTime("RandomRewards", RandomRewards::load),
+                () -> logTime("MapleOxQuizFactory", MapleOxQuizFactory::getInstance),
+                () -> logTime("MapleCarnivalFactory", MapleCarnivalFactory::getInstance),
+                () -> logTime("MobSkillFactory", MobSkillFactory::getInstance),
+                () -> logTime("SpeedRunner", SpeedRunner::loadSpeedRuns),
+                () -> logTime("MTSStorage", MTSStorage::load),
+                () -> logTime("MapleInventoryIdentifier", MapleInventoryIdentifier::getInstance),
+                () -> logTime("CashItemFactory", CashItemFactory.getInstance()::initialize),
+                () -> logTime("PlayerNPC", PlayerNPC::loadAll)
         );
 
         CountDownLatch latch = new CountDownLatch(tasks.size());
@@ -88,14 +88,64 @@ public class Start {
             });
         }
 
-        latch.await();
-        executor.shutdown();
-
+//        latch.await();
+//        executor.shutdown();
+//        System.out.println("加载网络服务和服务器核心...");
+//        MapleServerHandler.initiate();
+//        LoginServer.run_startup_configurations();
+//        ChannelServer.startChannel_Main();
+//        CashShopServer.run_startup_configurations();
+        
         System.out.println("加载网络服务和服务器核心...");
-        MapleServerHandler.initiate();
-        LoginServer.run_startup_configurations();
-        ChannelServer.startChannel_Main();
-        CashShopServer.run_startup_configurations();
+
+        ExecutorService serviceExecutor = Executors.newFixedThreadPool(4);
+        CountDownLatch netLatch = new CountDownLatch(4);
+
+        Runnable[] networkTasks = new Runnable[]{
+            () -> {
+                try {
+                    MapleServerHandler.initiate();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    netLatch.countDown();
+                }
+            },
+            () -> {
+                try {
+                    LoginServer.run_startup_configurations();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    netLatch.countDown();
+                }
+            },
+            () -> {
+                try {
+                    ChannelServer.startChannel_Main();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    netLatch.countDown();
+                }
+            },
+            () -> {
+                try {
+                    CashShopServer.run_startup_configurations();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    netLatch.countDown();
+                }
+            }
+        };
+
+        for (Runnable r : networkTasks) {
+            serviceExecutor.submit(r);
+        }
+
+        netLatch.await();
+        serviceExecutor.shutdown();
 
         System.out.println("注册任务/监控...");
         CheatTimer.getInstance().register(AutobanManager.getInstance(), 60000);
@@ -123,8 +173,7 @@ public class Start {
     }
 
     private void resetLoginStatus() {
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("UPDATE accounts SET loggedin = 0")) {
+        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement("UPDATE accounts SET loggedin = 0")) {
             ps.executeUpdate();
             System.out.println("重置登录状态完成.");
         } catch (SQLException ex) {
@@ -139,6 +188,7 @@ public class Start {
     }
 
     public static class Shutdown implements Runnable {
+
         @Override
         public void run() {
             ShutdownServer.getInstance().run();
@@ -146,9 +196,7 @@ public class Start {
     }
 
     public void clean() {
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT * FROM acheck WHERE day = 1");
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection con = DatabaseConnection.getConnection(); PreparedStatement ps = con.prepareStatement("SELECT * FROM acheck WHERE day = 1"); ResultSet rs = ps.executeQuery()) {
 
             Calendar ocal = Calendar.getInstance();
             String today = ocal.get(Calendar.YEAR) + "" + (ocal.get(Calendar.MONTH) + 1) + "" + ocal.get(Calendar.DAY_OF_MONTH);
