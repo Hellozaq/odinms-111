@@ -118,7 +118,7 @@ public class PlayerHandler {
                 final int action = slea.readInt();
                 if (type == 1 && action >= 1000) { //0 = normal key, 1 = skill, 2 = item
                     final Skill skil = SkillFactory.getSkill(action);
-                    if (skil != null) { //not sure about aran tutorial skills..lol
+                    if (skil != null && action != 23100004) { //not sure about aran tutorial skills..lol
                         if ((!skil.isFourthJob() && !skil.isBeginnerSkill() && skil.isinvisible() && chr.getSkillLevel(skil) <= 0) || GameConstants.isLinkedAranSkill(action) || (action % 10000 < 1000 && action != 23120011) || action >= 91000000) { //cannot put on a key
                             continue;
                         }
