@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
-
 import client.inventory.Item;
 import constants.GameConstants;
 import client.MapleBuffStat;
@@ -39,10 +38,8 @@ import server.maps.MapleMapObjectType;
 import server.maps.MapleMist;
 import server.maps.MapleSummon;
 import server.maps.SummonMovementType;
-
 import java.util.EnumMap;
 import java.util.Map.Entry;
-
 import server.MapleCarnivalFactory.MCSkill;
 import server.Timer.BuffTimer;
 import server.life.MapleLifeFactory;
@@ -2640,7 +2637,6 @@ public class MapleStatEffect implements Serializable {
                     stat.put(MapleBuffStat.FAMILIAR_SHADOW, 1);
                     applyto.getMap().broadcastMessage(applyto, BuffPacket.giveForeignBuff(applyto.getId(), stat, this), false);
                 } else if (isMonsterRiding()) {
-                    localDuration = 2100000000;
                     localstatups = new EnumMap<MapleBuffStat, Integer>(statups);
                     localstatups.put(MapleBuffStat.MONSTER_RIDING, 1);
                     final int mountid = parseMountInfo(applyto, sourceid);
