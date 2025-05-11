@@ -2757,24 +2757,24 @@ public class EtcPacket {
         return mplew.getPacket();
     }
 
-    public static byte[] updateAndroidLook(boolean itemOnly, MapleCharacter cid, MapleAndroid android) {
+    public static byte[] updateAndroidLook(boolean equipment, MapleCharacter cid, MapleAndroid android) {
         MaplePacketLittleEndianWriter mplew = new MaplePacketLittleEndianWriter();
-
         mplew.writeShort(SendPacketOpcode.ANDROID_UPDATE.getValue());
         mplew.writeInt(cid.getId());
-        mplew.write(itemOnly ? 1 : 0);
-        if (itemOnly) {
-            for (short i = -1200; i > -1207; i--) {
+        mplew.write(equipment ? 0xFF : 0);
+        if (equipment) {
+            for (short i = -1200; i > -1208; i--) {
                 final Item item = cid.getInventory(MapleInventoryType.EQUIPPED).getItem(i);
-                mplew.writeInt(item != null ? item.getItemId() : 0); // cash item
+                mplew.writeInt(item != null ? item.getItemId() : 0);
             }
         } else {
+            //mplew.writeShort(android.getSkin());
             mplew.writeShort(0); // skin
             mplew.writeShort(android.getHair() - 30000);
             mplew.writeShort(android.getFace() - 20000);
             mplew.writeMapleAsciiString(android.getName());
         }
-
+        mplew.write(0);
         return mplew.getPacket();
     }
 
